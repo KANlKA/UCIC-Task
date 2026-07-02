@@ -5,6 +5,7 @@ structured insight from every thread, and presents it in a single interactive da
 with a searchable knowledge repository.
 
 Built for the UCIC RPA & AI Automation task. Covers both task segments end to end.
+GOOGLE SHEETS LINK WITH DATA:-https://docs.google.com/spreadsheets/d/e/2PACX-1vSwFreIvY-er1Ze6WRyfrTj6hh5gwRVl92_bNqt11TnTUjgXiVoVUqmKk9bsWKqnIYF-ZP1yTUJzkgT/pub?output=csv
 
 ---
 
