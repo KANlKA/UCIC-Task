@@ -9,7 +9,6 @@ import sys
 PORT = 8008
 FILENAME = "index.html"
 
-# Work from the folder this script lives in, so it finds the HTML next to it.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 if not os.path.exists(FILENAME):
@@ -19,19 +18,16 @@ if not os.path.exists(FILENAME):
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
-    # Tell the browser not to cache, so a page refresh always shows the latest file.
     def end_headers(self):
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
-    # Quieter console output.
     def log_message(self, fmt, *args):
         pass
 
 
 def main():
     port = PORT
-    # If the default port is busy, try the next few automatically.
     for candidate in range(PORT, PORT + 10):
         try:
             httpd = socketserver.TCPServer(("", candidate), Handler)
