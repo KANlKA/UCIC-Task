@@ -13,17 +13,20 @@ if (typeof Chart === "undefined") {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
   :root{
-    --navy:#14213D; --navy-2:#1E2E52; --paper:#F6F3EC; --card:#FFFFFF;
-    --ink:#23262B; --ink-soft:#5B5A52; --rust:#C1502E; --rust-soft:#F4E1D8;
-    --teal:#1F6F6B; --teal-soft:#DCEAE8; --gold:#B8862E; --gold-soft:#F3E6CB;
-    --line:#DDD5C4; --amber-soft:#FBEFD6;
+    --navy:#182B41; --navy-2:#22405E; --paper:#F4F2EE; --card:#FFFFFF;
+    --ink:#1F2733; --ink-soft:#6B7280;
+    --rust:#C0492F; --rust-soft:#FBE7E1;
+    --teal:#0E7C6B; --teal-soft:#D8F0EB;
+    --gold:#C08A2D; --gold-soft:#FBEFD6;
+    --amber-soft:#FBEFD6;
+    --line:#E4DFD6;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
   #app{max-width:1240px;margin:0 auto;padding:0 0 60px;}
-  .topbar{background:linear-gradient(180deg,var(--navy) 0%,var(--navy-2) 100%);color:#fff;
-    padding:22px 28px 26px;border-radius:0 0 14px 14px;margin-bottom:22px;}
+  .topbar{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-2) 100%);color:#fff;
+    padding:24px 28px 28px;border-radius:0 0 16px 16px;margin-bottom:22px;box-shadow:0 6px 20px rgba(24,43,65,.12);}
   .topbar .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#B9C2DA;margin-bottom:6px;}
   .topbar h1{font-family:Georgia,serif;font-weight:600;font-size:26px;margin:0 0 4px;}
   .topbar .sub{color:#C7CEE0;font-size:13.5px;margin-bottom:16px;}
@@ -33,24 +36,47 @@ if (typeof Chart === "undefined") {
     border-radius:8px;color:#fff;padding:7px 12px;font-size:13px;}
   input[type="date"].as-of-box{color-scheme:dark;}
   .section{margin:30px 0;}
+  .row-eyebrow{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);
+    font-weight:600;padding:0 4px;margin-bottom:10px;display:flex;align-items:center;gap:10px;}
+  .row-eyebrow::after{content:"";flex:1;height:1px;background:var(--line);}
   .section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;padding:0 4px;}
-  .section-head h2{font-family:Georgia,serif;font-size:17px;margin:0;color:var(--navy);}
+  .section-head h2{font-family:Georgia,serif;font-size:17px;margin:0;color:var(--navy);position:relative;padding-left:11px;}
+  .section-head h2::before{content:"";position:absolute;left:0;top:3px;bottom:3px;width:3px;border-radius:2px;background:var(--navy);}
   .section-head .stamp{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);
     border-left:2px solid var(--line);padding-left:8px;}
+  .empty{color:var(--ink-soft);font-size:13px;padding:34px 4px;text-align:center;}
+  .empty .ico{font-size:26px;opacity:.35;display:block;margin-bottom:8px;}
   .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:0 4px;}
-  .kpi-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;position:relative;overflow:hidden;cursor:pointer;}
+  .kpi-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden;cursor:pointer;
+    box-shadow:0 1px 2px rgba(24,43,65,.04);transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;}
+  .kpi-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(24,43,65,.10);border-color:var(--navy);}
   .kpi-card .tag{position:absolute;top:0;left:0;width:4px;height:100%;}
-  .kpi-card .val{font-family:Georgia,serif;font-size:30px;font-weight:600;color:var(--navy);line-height:1;}
-  .kpi-card .lbl{font-size:11.5px;color:var(--ink-soft);margin-top:6px;text-transform:uppercase;letter-spacing:.05em;}
-  .kpi-card.active{border-color:var(--navy);box-shadow:0 0 0 1px var(--navy) inset;}
-  .kpi-card .chev{position:absolute;top:12px;right:12px;font-size:11px;color:var(--ink-soft);opacity:.5;}
+  .kpi-card .val{font-family:Georgia,serif;font-size:32px;font-weight:600;color:var(--navy);line-height:1;font-variant-numeric:tabular-nums;}
+  .kpi-card .lbl{font-size:11px;color:var(--ink-soft);margin-top:8px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;}
+  .kpi-card.active{border-color:var(--navy);box-shadow:0 0 0 1.5px var(--navy) inset,0 8px 22px rgba(24,43,65,.10);}
+  .kpi-card .chev{position:absolute;top:12px;right:12px;font-size:11px;color:var(--ink-soft);opacity:.45;}
   .kpi-card.active .chev{opacity:1;color:var(--navy);}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:0 1px 3px rgba(24,43,65,.05);}
+  .card.chart-card{display:flex;flex-direction:column;}
+  .card.chart-card .chart-wrap{height:340px;position:relative;}
+  #ownerChart{}
+  .card.owner-card .chart-wrap{height:250px;}
+  .table-scroll{height:340px;overflow-y:auto;}
+  #topicList{height:340px;overflow-y:auto;}
+  .table-scroll thead th{position:sticky;top:0;background:var(--card);z-index:1;}
+  .table-scroll::-webkit-scrollbar,#topicList::-webkit-scrollbar{width:8px;}
+  .table-scroll::-webkit-scrollbar-thumb,#topicList::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px;}
+  .workload-strip{display:flex;gap:0;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);}
+  .workload-strip .wl{flex:1;text-align:center;border-right:1px solid var(--line);}
+  .workload-strip .wl:last-child{border-right:none;}
+  .workload-strip .wl .n{font-family:Georgia,serif;font-size:20px;font-weight:600;color:var(--navy);line-height:1;}
+  .workload-strip .wl .k{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin-top:5px;}
   .kpi-detail{margin:14px 4px 0;}
   .kpi-detail .detail-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
   .kpi-detail .detail-head h2{font-family:Georgia,serif;font-size:17px;margin:0;color:var(--navy);}
   .kpi-detail .clear-link{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--rust);cursor:pointer;font-weight:600;}
-  .two-col{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;padding:0 4px;}
+  .two-col{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;padding:0 4px;align-items:stretch;}
+  .two-col > .card{display:flex;flex-direction:column;}
   .chip-row{display:flex;flex-wrap:wrap;gap:8px;padding:0 4px;margin-bottom:14px;}
   .chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:5px 13px;font-size:12.5px;
     cursor:pointer;color:var(--ink-soft);user-select:none;}
@@ -64,7 +90,8 @@ if (typeof Chart === "undefined") {
   .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;}
   .badge.overdue{background:var(--rust-soft);color:var(--rust);}
   .badge.bottleneck{background:var(--rust-soft);color:var(--rust);}
-  .days-late{color:var(--rust);font-weight:700;}
+  .days-late{color:var(--rust);font-weight:700;white-space:nowrap;}
+  td.due-cell{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink-soft);}
   .topic-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #EFEAE0;}
   .topic-item:last-child{border-bottom:none;}
   .topic-item .t-name{font-weight:600;font-size:13.5px;color:var(--ink);}
@@ -85,7 +112,6 @@ if (typeof Chart === "undefined") {
   .sentiment.positive{background:var(--teal-soft);color:var(--teal);}
   .sentiment.neutral{background:#ECE9E0;color:var(--ink-soft);}
   .sentiment.negative{background:var(--rust-soft);color:var(--rust);}
-  .empty{color:var(--ink-soft);font-size:13px;padding:20px 4px;text-align:center;}
   .footnote{font-size:11.5px;color:var(--ink-soft);padding:18px 4px 0;line-height:1.6;border-top:1px dashed var(--line);margin-top:8px;}
   .setup{background:var(--amber-soft);border:1px solid var(--gold);border-radius:10px;padding:16px 18px;margin:0 4px 20px;font-size:13px;line-height:1.6;}
   .setup code{background:#fff;padding:1px 5px;border-radius:4px;border:1px solid var(--line);font-size:12px;word-break:break-all;}
@@ -100,8 +126,6 @@ if (typeof Chart === "undefined") {
 <script>
 let INSIGHTS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSwFreIvY-er1Ze6WRyfrTj6hh5gwRVl92_bNqt11TnTUjgXiVoVUqmKk9bsWKqnIYF-ZP1yTUJzkgT/pub?gid=0&single=true&output=csv";
 let TASKS_CSV_URL    = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSwFreIvY-er1Ze6WRyfrTj6hh5gwRVl92_bNqt11TnTUjgXiVoVUqmKk9bsWKqnIYF-ZP1yTUJzkgT/pub?gid=2105955032&single=true&output=csv";
-// Paste the published CSV link for the Candidate_Input_Emails tab here to enable the
-// real Conversation Volume Trend (emails per day). Leave "" to fall back to sentiment.
 let EMAILS_CSV_URL   = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSwFreIvY-er1Ze6WRyfrTj6hh5gwRVl92_bNqt11TnTUjgXiVoVUqmKk9bsWKqnIYF-ZP1yTUJzkgT/pub?gid=423928107&single=true&output=csv";
 
 (function readHash(){
@@ -156,6 +180,13 @@ function isOverdue(t){
   const d=normDate(t.due_date);
   return t.status!=="resolved" && d!=="" && d<asOfDate;
 }
+function fmtDate(v){
+  const d=normDate(v);
+  if(!d) return "—";
+  const mon=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const p=d.split("-");
+  return (+p[2])+" "+mon[(+p[1])-1];
+}
 
 function fetchCsv(url){
   return new Promise((resolve,reject)=>{
@@ -187,7 +218,6 @@ async function loadData(){
       thread_id:r.thread_id, description:r.description||"", owner:r.owner||"Unassigned",
       due_date:normDate(r.due_date||""), status:(r.status||"open").toLowerCase()
     }));
-    // Optional emails tab for the volume trend
     emails = [];
     if(EMAILS_CSV_URL){
       try{
@@ -199,6 +229,8 @@ async function loadData(){
       }catch(e){ emails=[]; }
     }
     if(status) status.textContent = insights.length+" threads · "+tasks.length+" tasks"+(emails.length?" · "+emails.length+" emails":"")+" loaded";
+    const fresh=document.getElementById("freshPill");
+    if(fresh){ const now=new Date(); fresh.textContent="Updated "+now.toLocaleString([], {day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}); }
     render();
   }catch(e){
     if(status) status.textContent = "Load failed";
@@ -271,8 +303,24 @@ function renderKPIs(){
     `<div class="kpi-card ${kpiFilter===c.key?'active':''}" data-key="${c.key}">
        <div class="tag" style="background:${c.c}"></div>
        <div class="chev">${kpiFilter===c.key?'▲':'▼'}</div>
-       <div class="val">${c.v}</div><div class="lbl">${c.l}</div>
+       <div class="val" data-target="${c.v}">${window._kpiAnimated?c.v:0}</div><div class="lbl">${c.l}</div>
      </div>`).join("");
+  if(!window._kpiAnimated){
+    window._kpiAnimated=true;
+    document.querySelectorAll("#kpiGrid .val").forEach(el=>{
+      const target=+el.dataset.target||0;
+      if(target===0){ el.textContent=0; return; }
+      const dur=550, start=performance.now();
+      const tick=(now)=>{
+        const p=Math.min((now-start)/dur,1);
+        const eased=1-Math.pow(1-p,3);
+        el.textContent=Math.round(eased*target);
+        if(p<1) requestAnimationFrame(tick);
+        else el.textContent=target;
+      };
+      requestAnimationFrame(tick);
+    });
+  }
   document.querySelectorAll("#kpiGrid .kpi-card").forEach(card=>card.addEventListener("click",()=>{
     const k=card.dataset.key;
     kpiFilter=(kpiFilter===k?null:k);
@@ -291,7 +339,7 @@ function renderKpiDetail(){
     if(!list.length) return `<div class="empty">Nothing to show for this filter.</div>`;
     return `<table><thead><tr><th>Task</th><th>Owner</th><th>Due</th><th>${showAge?"Days late":"Status"}</th></tr></thead><tbody>`+
       list.map(t=>`<tr><td>${esc(t.description)}</td><td class="owner-name">${esc(t.owner)}</td>
-        <td>${esc(t.due_date||"—")}</td>
+        <td class="due-cell">${fmtDate(t.due_date)}</td>
         <td>${showAge?'<span class="days-late">'+daysBetween(t.due_date,asOfDate)+'d</span>':esc(t.status)}</td></tr>`).join("")+
       `</tbody></table>`;
   };
@@ -327,22 +375,38 @@ function renderKpiDetail(){
 
 function renderOwnerChart(){
   const ctx=document.getElementById("ownerChart");
+  const strip=document.getElementById("workloadStrip");
   if(typeof Chart==="undefined"){ if(ctx) ctx.parentElement.insertAdjacentHTML("beforeend","<div class='empty'>Chart library unavailable — see table data.</div>"); return; }
-  const tk=filteredTasks().filter(t=>t.status!=="resolved"&&t.owner);
+  const tk=filteredTasks().filter(t=>t.status!=="resolved"&&t.owner&&t.owner!=="Unassigned");
   const counts={}; tk.forEach(t=>counts[t.owner]=(counts[t.owner]||0)+1);
   const labels=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]).slice(0,10);
   if(charts.owner)charts.owner.destroy();
+  if(strip){
+    const owners=Object.keys(counts);
+    const total=tk.length;
+    const busiest=labels[0];
+    const avg=owners.length?(total/owners.length):0;
+    strip.innerHTML = owners.length
+      ? `<div class="wl"><div class="n">${total}</div><div class="k">Open tasks</div></div>
+         <div class="wl"><div class="n">${owners.length}</div><div class="k">People</div></div>
+         <div class="wl"><div class="n">${avg.toFixed(1)}</div><div class="k">Avg / person</div></div>
+         <div class="wl"><div class="n" style="font-size:14px;padding-top:3px">${esc(busiest)}</div><div class="k">Busiest (${counts[busiest]})</div></div>`
+      : "";
+  }
   if(!labels.length){ctx.getContext("2d").clearRect(0,0,ctx.width,ctx.height);return;}
   charts.owner=new Chart(ctx,{type:"bar",data:{labels,datasets:[{data:labels.map(l=>counts[l]),
-    backgroundColor:"#14213D",borderRadius:4,maxBarThickness:26}]},
-    options:{indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{ticks:{precision:0},grid:{color:"#EFEAE0"}},y:{grid:{display:false}}}}});
+    backgroundColor:"#182B41",borderRadius:5,barThickness:18,categoryPercentage:0.8,barPercentage:0.9}]},
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:4,bottom:4}},
+      plugins:{legend:{display:false},tooltip:{enabled:true}},
+      scales:{x:{ticks:{precision:0},grid:{color:"#EFEAE0"}},y:{grid:{display:false},ticks:{font:{size:12}}}}}});
 }
 function renderOverdue(){
   const tk=filteredTasks().filter(isOverdue).sort((a,b)=>a.due_date<b.due_date?-1:1);
   const el=document.getElementById("overdueBody");
-  if(!tk.length){el.innerHTML=`<tr><td colspan="4" class="empty">No overdue items for this filter.</td></tr>`;return;}
+  if(!tk.length){el.innerHTML=`<tr><td colspan="4" class="empty"><span class="ico">✓</span>No overdue tasks for this filter.</td></tr>`;return;}
   el.innerHTML=tk.map(t=>`<tr><td>${esc(t.description)}</td><td class="owner-name">${esc(t.owner)}</td>
-    <td>${esc(t.due_date)}</td><td class="days-late">${daysBetween(t.due_date,asOfDate)}d</td></tr>`).join("");
+    <td class="due-cell">${fmtDate(t.due_date)}</td><td class="days-late">${daysBetween(t.due_date,asOfDate)}d</td></tr>`).join("");
 }
 function renderTopics(){
   const counts={},bottleneck={};
@@ -350,7 +414,7 @@ function renderTopics(){
   const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
   const max=entries.length?entries[0][1]:1;
   const el=document.getElementById("topicList");
-  if(!entries.length){el.innerHTML=`<div class="empty">No topics for this filter.</div>`;return;}
+  if(!entries.length){el.innerHTML=`<div class="empty"><span class="ico">◔</span>No topics match this filter.</div>`;return;}
   el.innerHTML=entries.map(([n,c])=>`<div class="topic-item"><div>
     <div class="t-name">${esc(n)} ${bottleneck[n]?'<span class="badge bottleneck">bottleneck</span>':''}</div>
     <div class="t-meta">${c} thread${c>1?'s':''}</div></div>
@@ -364,26 +428,24 @@ function renderVolume(){
 
   const em=filteredEmails();
   if(em.length){
-    // real conversation volume: emails per day
     if(head) head.innerHTML='Conversation Volume Trend<span class="stamp">emails / day</span>';
     const byDay={}; em.forEach(e=>{byDay[e.day]=(byDay[e.day]||0)+1;});
     const days=Object.keys(byDay).sort();
     charts.volume=new Chart(ctx,{type:"line",data:{labels:days,
-      datasets:[{data:days.map(d=>byDay[d]),borderColor:"#1F6F6B",backgroundColor:"rgba(31,111,107,.12)",
-        fill:true,tension:.3,pointRadius:2,pointBackgroundColor:"#1F6F6B"}]},
-      options:{plugins:{legend:{display:false}},scales:{
+      datasets:[{data:days.map(d=>byDay[d]),borderColor:"#0E7C6B",backgroundColor:"rgba(14,124,107,.12)",
+        fill:true,tension:.3,pointRadius:2,pointBackgroundColor:"#0E7C6B"}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
         x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:8}},
         y:{beginAtZero:true,ticks:{precision:0},grid:{color:"#EFEAE0"}}}}});
   } else {
-    // fallback: sentiment mix
     if(head) head.innerHTML='Sentiment Mix<span class="stamp">across threads</span>';
     const ins=filteredInsights();
     const sent={positive:0,neutral:0,negative:0};
     ins.forEach(i=>{sent[i.sentiment]=(sent[i.sentiment]||0)+1;});
     charts.volume=new Chart(ctx,{type:"doughnut",data:{labels:["Positive","Neutral","Negative"],
       datasets:[{data:[sent.positive,sent.neutral,sent.negative],
-        backgroundColor:["#1F6F6B","#C9C2B0","#C1502E"]}]},
-      options:{plugins:{legend:{position:"bottom",labels:{font:{size:11}}}}}});
+        backgroundColor:["#0E7C6B","#C9C0AE","#C0492F"]}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{font:{size:11}}}}}});
   }
 }
 function renderRepo(){
@@ -393,7 +455,7 @@ function renderRepo(){
     return !term||hay.includes(term);
   });
   const el=document.getElementById("krGrid");
-  if(!rows.length){el.innerHTML=`<div class="empty">No matching threads.</div>`;return;}
+  if(!rows.length){el.innerHTML=`<div class="empty"><span class="ico">⌕</span>No threads match your search.</div>`;return;}
   el.innerHTML=rows.map(i=>{
     const dec=i.decisions.map(d=>`<li>${esc(d)}</li>`).join("");
     const tags=i.topic_tags.map(t=>`<span class="tag-pill">${esc(t)}</span>`).join("");
@@ -409,25 +471,34 @@ function buildShell(){
   document.getElementById("app").innerHTML=`
   <div class="topbar"><div class="eyebrow">UCIC · Group Email Intelligence</div>
     <h1>The Inbox Ledger</h1>
-    <div class="sub">Live view of the n8n + Groq pipeline output — tasks, owners, decisions and bottlenecks across every thread.</div>
+    <div class="sub">Live view — tasks, owners, decisions and bottlenecks across every thread.</div>
     <div class="controls-row">
       <div><label>As of</label><input type="date" id="asOfInput" class="as-of-box" value="${asOfDate}"></div>
       <div class="status-pill" id="statusPill">Loading…</div>
+      <div class="status-pill" id="freshPill" style="opacity:.85"></div>
     </div>
   </div>
   <div class="chip-row" id="chipRow"></div>
-  <div class="section"><div class="kpi-grid" id="kpiGrid"></div>
+  <div class="section">
+    <div class="row-eyebrow">Operations at a glance</div>
+    <div class="kpi-grid" id="kpiGrid"></div>
     <div class="kpi-detail" id="kpiDetail"></div></div>
-  <div class="section"><div class="two-col">
-    <div class="card"><div class="section-head"><h2>Tasks by Owner</h2><span class="stamp">open</span></div><canvas id="ownerChart" height="220"></canvas></div>
+  <div class="section">
+    <div class="row-eyebrow">Tasks &amp; accountability</div>
+    <div class="two-col">
+    <div class="card chart-card owner-card"><div class="section-head"><h2>Tasks by Owner</h2><span class="stamp">open workload</span></div><div class="chart-wrap"><canvas id="ownerChart"></canvas></div><div class="workload-strip" id="workloadStrip"></div></div>
     <div class="card"><div class="section-head"><h2>Overdue Tasks</h2><span class="stamp">vs. as-of date</span></div>
-      <table><thead><tr><th>Task</th><th>Owner</th><th>Due</th><th>Days late</th></tr></thead><tbody id="overdueBody"></tbody></table></div>
+      <div class="table-scroll"><table><thead><tr><th>Task</th><th>Owner</th><th>Due</th><th>Days late</th></tr></thead><tbody id="overdueBody"></tbody></table></div></div>
   </div></div>
-  <div class="section"><div class="two-col">
+  <div class="section">
+    <div class="row-eyebrow">Conversation insights</div>
+    <div class="two-col">
     <div class="card"><div class="section-head"><h2>Active Discussion Topics</h2><span class="stamp">by thread count</span></div><div id="topicList"></div></div>
-    <div class="card"><div class="section-head" id="volumeHead"><h2>Conversation Volume Trend</h2><span class="stamp">emails / day</span></div><canvas id="volumeChart" height="220"></canvas></div>
+    <div class="card chart-card"><div class="section-head" id="volumeHead"><h2>Conversation Volume Trend</h2><span class="stamp">emails / day</span></div><div class="chart-wrap"><canvas id="volumeChart"></canvas></div></div>
   </div></div>
-  <div class="section"><div class="section-head"><h2>Knowledge Repository</h2><span class="stamp">decisions, lessons, bottlenecks</span></div>
+  <div class="section">
+    <div class="row-eyebrow">Institutional memory</div>
+    <div class="section-head"><h2>Knowledge Repository</h2><span class="stamp">decisions, lessons, bottlenecks</span></div>
     <input type="text" class="search-box" id="searchBox" placeholder="Search decisions, topics, tags e.g. 'covenant', 'KYC', 'automation'...">
     <div class="kr-grid" id="krGrid"></div></div>
   <div class="footnote">Reads Thread_Insights, Tasks and (optionally) Candidate_Input_Emails via published CSV. No AI runs at view time — this visualizes pipeline output. Refresh to pull the latest rows after a new pipeline run.</div>`;
@@ -439,5 +510,3 @@ if(INSIGHTS_CSV_URL){ buildShell(); loadData(); } else { renderSetup(); }
 </script>
 </body>
 </html>
-
-/Users/kanika/Documents/task2/index.html
