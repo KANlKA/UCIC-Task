@@ -27,10 +27,9 @@ GOOGLE SHEETS LINK WITH DATA:-https://docs.google.com/spreadsheets/d/e/2PACX-1vS
 
 ## Architecture
 
-```
+
 <img width="1600" height="1098" alt="image" src="https://github.com/user-attachments/assets/3e240384-4963-4120-abcf-e7d7eb6a60a6" />
 
-```
 
 The pipeline and the dashboard are deliberately decoupled. n8n does the ingestion and
 AI extraction and writes to the Google Sheet; the dashboard only reads that sheet and
