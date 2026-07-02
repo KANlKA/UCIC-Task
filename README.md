@@ -28,19 +28,8 @@ GOOGLE SHEETS LINK WITH DATA:-https://docs.google.com/spreadsheets/d/e/2PACX-1vS
 ## Architecture
 
 ```
-Group emails
-     |
-     v
-n8n pipeline  (Segment 1)
-   Schedule  ->  Group by thread  ->  Groq LLM (Llama 3.3 70B)  ->  Extract JSON
-     |
-     v
-Google Sheet  - single source of truth
-   Thread_Insights . Tasks . Candidate_Input_Emails
-     |
-     v
-Dashboard + knowledge repository  (Segment 2)
-   Static web app, reads the published CSV
+<img width="1600" height="1098" alt="image" src="https://github.com/user-attachments/assets/3e240384-4963-4120-abcf-e7d7eb6a60a6" />
+
 ```
 
 The pipeline and the dashboard are deliberately decoupled. n8n does the ingestion and
