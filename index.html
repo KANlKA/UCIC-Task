@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UCIC Group Email Intelligence</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script>
+if (typeof Chart === "undefined") {
+  document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"><\/script>');
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --navy:#14213D; --navy-2:#1E2E52; --paper:#F6F3EC; --card:#FFFFFF;
+    --ink:#23262B; --ink-soft:#5B5A52; --rust:#C1502E; --rust-soft:#F4E1D8;
+    --teal:#1F6F6B; --teal-soft:#DCEAE8; --gold:#B8862E; --gold-soft:#F3E6CB;
+    --line:#DDD5C4; --amber-soft:#FBEFD6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
+  #app{max-width:1240px;margin:0 auto;padding:0 0 60px;}
+  .topbar{background:linear-gradient(180deg,var(--navy) 0%,var(--navy-2) 100%);color:#fff;
+    padding:22px 28px 26px;border-radius:0 0 14px 14px;margin-bottom:22px;}
+  .topbar .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#B9C2DA;margin-bottom:6px;}
+  .topbar h1{font-family:Georgia,serif;font-weight:600;font-size:26px;margin:0 0 4px;}
+  .topbar .sub{color:#C7CEE0;font-size:13.5px;margin-bottom:16px;}
+  .controls-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+  .controls-row label{font-size:11.5px;color:#B9C2DA;margin-right:6px;}
+  .as-of-box,.status-pill{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
+    border-radius:8px;color:#fff;padding:7px 12px;font-size:13px;}
+  input[type="date"].as-of-box{color-scheme:dark;}
+  .section{margin:30px 0;}
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;padding:0 4px;}
+  .section-head h2{font-family:Georgia,serif;font-size:17px;margin:0;color:var(--navy);}
+  .section-head .stamp{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);
+    border-left:2px solid var(--line);padding-left:8px;}
+  .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:0 4px;}
+  .kpi-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;position:relative;overflow:hidden;cursor:pointer;}
+  .kpi-card .tag{position:absolute;top:0;left:0;width:4px;height:100%;}
+  .kpi-card .val{font-family:Georgia,serif;font-size:30px;font-weight:600;color:var(--navy);line-height:1;}
+  .kpi-card .lbl{font-size:11.5px;color:var(--ink-soft);margin-top:6px;text-transform:uppercase;letter-spacing:.05em;}
+  .kpi-card.active{border-color:var(--navy);box-shadow:0 0 0 1px var(--navy) inset;}
+  .kpi-card .chev{position:absolute;top:12px;right:12px;font-size:11px;color:var(--ink-soft);opacity:.5;}
+  .kpi-card.active .chev{opacity:1;color:var(--navy);}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;}
+  .kpi-detail{margin:14px 4px 0;}
+  .kpi-detail .detail-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .kpi-detail .detail-head h2{font-family:Georgia,serif;font-size:17px;margin:0;color:var(--navy);}
+  .kpi-detail .clear-link{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--rust);cursor:pointer;font-weight:600;}
+  .two-col{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;padding:0 4px;}
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px;padding:0 4px;margin-bottom:14px;}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:5px 13px;font-size:12.5px;
+    cursor:pointer;color:var(--ink-soft);user-select:none;}
+  .chip.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);
+     border-bottom:1px solid var(--line);padding:6px 8px;}
+  td{padding:9px 8px;border-bottom:1px solid #EFEAE0;vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  .owner-name{font-weight:600;color:var(--navy);}
+  .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;}
+  .badge.overdue{background:var(--rust-soft);color:var(--rust);}
+  .badge.bottleneck{background:var(--rust-soft);color:var(--rust);}
+  .days-late{color:var(--rust);font-weight:700;}
+  .topic-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #EFEAE0;}
+  .topic-item:last-child{border-bottom:none;}
+  .topic-item .t-name{font-weight:600;font-size:13.5px;color:var(--ink);}
+  .topic-item .t-meta{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .topic-bar-bg{background:#EFEAE0;border-radius:99px;height:6px;width:90px;overflow:hidden;}
+  .topic-bar-fill{background:var(--navy);height:100%;}
+  .search-box{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fff;margin-bottom:14px;}
+  .kr-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+  .kr-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:15px 17px;}
+  .kr-card .kr-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;}
+  .kr-card h3{font-size:14px;margin:0;font-family:Georgia,serif;color:var(--navy);}
+  .kr-card .kr-dept{font-size:10.5px;text-transform:uppercase;color:var(--ink-soft);letter-spacing:.05em;margin-bottom:8px;}
+  .kr-card p{font-size:12.8px;line-height:1.5;color:var(--ink);margin:0 0 8px;}
+  .kr-card .decisions{font-size:12px;color:var(--teal);margin:0;padding-left:16px;}
+  .kr-card .decisions li{margin-bottom:2px;}
+  .tag-pill{display:inline-block;font-size:10.5px;background:var(--amber-soft);color:#7A5A16;padding:2px 8px;border-radius:99px;margin:0 5px 5px 0;}
+  .sentiment{font-size:10.5px;padding:2px 8px;border-radius:99px;font-weight:600;}
+  .sentiment.positive{background:var(--teal-soft);color:var(--teal);}
+  .sentiment.neutral{background:#ECE9E0;color:var(--ink-soft);}
+  .sentiment.negative{background:var(--rust-soft);color:var(--rust);}
+  .empty{color:var(--ink-soft);font-size:13px;padding:20px 4px;text-align:center;}
+  .footnote{font-size:11.5px;color:var(--ink-soft);padding:18px 4px 0;line-height:1.6;border-top:1px dashed var(--line);margin-top:8px;}
+  .setup{background:var(--amber-soft);border:1px solid var(--gold);border-radius:10px;padding:16px 18px;margin:0 4px 20px;font-size:13px;line-height:1.6;}
+  .setup code{background:#fff;padding:1px 5px;border-radius:4px;border:1px solid var(--line);font-size:12px;word-break:break-all;}
+  .setup input{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:7px;margin-top:8px;font-size:12.5px;}
+  .setup button{margin-top:10px;background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 16px;font-size:13px;cursor:pointer;}
+  canvas{max-width:100%;}
+  @media (max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr);}.two-col{grid-template-columns:1fr;}.kr-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+let INSIGHTS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSwFreIvY-er1Ze6WRyfrTj6hh5gwRVl92_bNqt11TnTUjgXiVoVUqmKk9bsWKqnIYF-ZP1yTUJzkgT/pub?gid=0&single=true&output=csv";
+let TASKS_CSV_URL    = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSwFreIvY-er1Ze6WRyfrTj6hh5gwRVl92_bNqt11TnTUjgXiVoVUqmKk9bsWKqnIYF-ZP1yTUJzkgT/pub?gid=2105955032&single=true&output=csv";
+// Paste the published CSV link for the Candidate_Input_Emails tab here to enable the
+// real Conversation Volume Trend (emails per day). Leave "" to fall back to sentiment.
+let EMAILS_CSV_URL   = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSwFreIvY-er1Ze6WRyfrTj6hh5gwRVl92_bNqt11TnTUjgXiVoVUqmKk9bsWKqnIYF-ZP1yTUJzkgT/pub?gid=423928107&single=true&output=csv";
+
+(function readHash(){
+  const h = new URLSearchParams(location.hash.slice(1));
+  if(h.get("insights")) INSIGHTS_CSV_URL = decodeURIComponent(h.get("insights"));
+  if(h.get("tasks"))    TASKS_CSV_URL    = decodeURIComponent(h.get("tasks"));
+  if(h.get("emails"))   EMAILS_CSV_URL   = decodeURIComponent(h.get("emails"));
+})();
+
+let insights = [];
+let tasks = [];
+let emails = [];
+let asOfDate = new Date().toISOString().slice(0,10);
+let deptFilter = "All";
+let searchTerm = "";
+let kpiFilter = null;
+let charts = {};
+
+function parseListCell(v){
+  if(!v) return [];
+  const s = String(v).trim();
+  if(s.startsWith("[")){
+    try{ const arr = JSON.parse(s); return Array.isArray(arr) ? arr.map(x=>String(x)) : []; }catch(e){}
+  }
+  return s.split(/[|,]/).map(x=>x.trim()).filter(Boolean);
+}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function normDate(v){
+  if(!v) return "";
+  let s=String(v).trim();
+  if(!s) return "";
+  s=s.slice(0,10).replace(/[.\/]/g,"-");
+  const p=s.split("-").map(x=>x.trim());
+  if(p.length!==3) return "";
+  let y,m,d;
+  if(p[0].length===4){ [y,m,d]=p; }
+  else if(p[2].length===4){
+    y=p[2];
+    if(+p[0]>12){ d=p[0]; m=p[1]; } else { m=p[0]; d=p[1]; }
+  } else return "";
+  y=+y; m=+m; d=+d;
+  if(!y||!m||!d||m>12||d>31) return "";
+  return y+"-"+String(m).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+}
+function daysBetween(a,b){
+  const na=normDate(a), nb=normDate(b);
+  if(!na||!nb) return 0;
+  return Math.round((Date.parse(nb+"T00:00:00Z")-Date.parse(na+"T00:00:00Z"))/86400000);
+}
+function isOverdue(t){
+  const d=normDate(t.due_date);
+  return t.status!=="resolved" && d!=="" && d<asOfDate;
+}
+
+function fetchCsv(url){
+  return new Promise((resolve,reject)=>{
+    fetch(url,{redirect:"follow"})
+      .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
+      .then(text=>{ resolve(Papa.parse(text,{header:true,skipEmptyLines:true}).data); })
+      .catch(()=>{
+        Papa.parse(url,{download:true,header:true,skipEmptyLines:true,
+          complete:(res)=>resolve(res.data), error:(err)=>reject(err)});
+      });
+  });
+}
+
+async function loadData(){
+  const status = document.getElementById("statusPill");
+  if(!INSIGHTS_CSV_URL){ renderSetup(); return; }
+  try{
+    if(status) status.textContent = "Loading from Google Sheet…";
+    insights = await fetchCsv(INSIGHTS_CSV_URL);
+    tasks = TASKS_CSV_URL ? await fetchCsv(TASKS_CSV_URL) : [];
+    insights = insights.filter(r=>r.thread_id).map(r=>({
+      thread_id:r.thread_id, summary:r.summary||"",
+      decisions:parseListCell(r.decisions), topic_tags:parseListCell(r.topic_tags),
+      bottleneck:String(r.bottleneck).toUpperCase()==="TRUE",
+      sentiment:(r.sentiment||"neutral").toLowerCase(),
+      department:r.department||r.Department||"—"
+    }));
+    tasks = tasks.filter(r=>r.description||r.thread_id).map(r=>({
+      thread_id:r.thread_id, description:r.description||"", owner:r.owner||"Unassigned",
+      due_date:normDate(r.due_date||""), status:(r.status||"open").toLowerCase()
+    }));
+    // Optional emails tab for the volume trend
+    emails = [];
+    if(EMAILS_CSV_URL){
+      try{
+        const raw = await fetchCsv(EMAILS_CSV_URL);
+        emails = raw.map(r=>{
+          const ts = r.Sent_Timestamp || r.sent_timestamp || r.Date || r.date || r.Timestamp || "";
+          return { day: normDate(ts), dept: r.Department||r.department||"—" };
+        }).filter(e=>e.day);
+      }catch(e){ emails=[]; }
+    }
+    if(status) status.textContent = insights.length+" threads · "+tasks.length+" tasks"+(emails.length?" · "+emails.length+" emails":"")+" loaded";
+    render();
+  }catch(e){
+    if(status) status.textContent = "Load failed";
+    renderSetup("Couldn't load the CSV ("+(e&&e.message?e.message:"unknown error")+"). If you opened this file by double-clicking it, that can block the request. Try the tips below.");
+  }
+}
+
+function renderSetup(msg){
+  document.getElementById("app").innerHTML = `
+  <div class="topbar"><div class="eyebrow">UCIC · Group Email Intelligence</div>
+    <h1>The Inbox Ledger</h1>
+    <div class="sub">Connect this dashboard to your Google Sheet to visualize the pipeline's output.</div></div>
+  <div class="setup">
+    ${msg?`<div style="color:var(--rust);margin-bottom:10px;font-weight:600;">${esc(msg)}</div>`:""}
+    <strong>One-time setup — publish your tabs as CSV:</strong><br>
+    In Google Sheets: <code>File → Share → Publish to web</code>. Pick a tab, choose
+    <code>Comma-separated values (.csv)</code>, Publish, copy the link. Do it for Thread_Insights, Tasks, and (optional) Candidate_Input_Emails.<br><br>
+    <label>Thread_Insights CSV link:</label>
+    <input id="inpInsights" placeholder="https://docs.google.com/.../pub?gid=0&single=true&output=csv" value="${esc(INSIGHTS_CSV_URL)}">
+    <label>Tasks CSV link:</label>
+    <input id="inpTasks" placeholder="https://docs.google.com/.../pub?gid=...&single=true&output=csv" value="${esc(TASKS_CSV_URL)}">
+    <label>Candidate_Input_Emails CSV link (optional, for volume trend):</label>
+    <input id="inpEmails" placeholder="https://docs.google.com/.../pub?gid=...&single=true&output=csv" value="${esc(EMAILS_CSV_URL)}">
+    <button id="connectBtn">Connect &amp; Load</button>
+  </div>`;
+  document.getElementById("connectBtn").addEventListener("click",()=>{
+    INSIGHTS_CSV_URL = document.getElementById("inpInsights").value.trim();
+    TASKS_CSV_URL = document.getElementById("inpTasks").value.trim();
+    EMAILS_CSV_URL = document.getElementById("inpEmails").value.trim();
+    location.hash = "insights="+encodeURIComponent(INSIGHTS_CSV_URL)+"&tasks="+encodeURIComponent(TASKS_CSV_URL)+(EMAILS_CSV_URL?"&emails="+encodeURIComponent(EMAILS_CSV_URL):"");
+    buildShell(); loadData();
+  });
+}
+
+function depts(){ return ["All",...Array.from(new Set(insights.map(i=>i.department).filter(d=>d&&d!=="—"))).sort()]; }
+function filteredInsights(){ return insights.filter(i=>deptFilter==="All"||i.department===deptFilter); }
+function filteredTasks(){
+  const deptByThread = {}; insights.forEach(i=>deptByThread[i.thread_id]=i.department);
+  return tasks.filter(t=>deptFilter==="All"||deptByThread[t.thread_id]===deptFilter);
+}
+function filteredEmails(){
+  return emails.filter(e=>deptFilter==="All"||e.dept===deptFilter);
+}
+
+function render(){
+  const safe=(fn)=>{try{fn();}catch(e){console.error(fn.name,e);}};
+  safe(renderChips); safe(renderKPIs); safe(renderKpiDetail); safe(renderOwnerChart); safe(renderOverdue);
+  safe(renderTopics); safe(renderVolume); safe(renderRepo);
+}
+
+function renderChips(){
+  const el=document.getElementById("chipRow");
+  el.innerHTML=depts().map(d=>`<div class="chip ${d===deptFilter?'active':''}" data-d="${esc(d)}">${esc(d)}</div>`).join("");
+  el.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{deptFilter=c.dataset.d;render();}));
+}
+function renderKPIs(){
+  const ins=filteredInsights(), tk=filteredTasks();
+  const open=tk.filter(t=>t.status!=="resolved");
+  const overdue=open.filter(isOverdue);
+  const topics=new Set(); ins.forEach(i=>i.topic_tags.forEach(t=>topics.add(t)));
+  const bottlenecks=ins.filter(i=>i.bottleneck).length;
+  const cards=[
+    {key:"threads",v:ins.length,l:"Threads",c:"var(--navy)"},
+    {key:"open",v:open.length,l:"Open Tasks",c:"var(--gold)"},
+    {key:"overdue",v:overdue.length,l:"Overdue Tasks",c:"var(--rust)"},
+    {key:"topics",v:topics.size,l:"Active Topics",c:"var(--teal)"},
+    {key:"bottlenecks",v:bottlenecks,l:"Bottlenecks",c:"var(--rust)"},
+  ];
+  document.getElementById("kpiGrid").innerHTML=cards.map(c=>
+    `<div class="kpi-card ${kpiFilter===c.key?'active':''}" data-key="${c.key}">
+       <div class="tag" style="background:${c.c}"></div>
+       <div class="chev">${kpiFilter===c.key?'▲':'▼'}</div>
+       <div class="val">${c.v}</div><div class="lbl">${c.l}</div>
+     </div>`).join("");
+  document.querySelectorAll("#kpiGrid .kpi-card").forEach(card=>card.addEventListener("click",()=>{
+    const k=card.dataset.key;
+    kpiFilter=(kpiFilter===k?null:k);
+    renderKPIs(); renderKpiDetail();
+  }));
+}
+
+function renderKpiDetail(){
+  const panel=document.getElementById("kpiDetail");
+  if(!panel) return;
+  if(!kpiFilter){ panel.innerHTML=""; return; }
+  const ins=filteredInsights(), tk=filteredTasks();
+  const open=tk.filter(t=>t.status!=="resolved");
+  let title="", inner="";
+  const taskTable=(list,showAge)=>{
+    if(!list.length) return `<div class="empty">Nothing to show for this filter.</div>`;
+    return `<table><thead><tr><th>Task</th><th>Owner</th><th>Due</th><th>${showAge?"Days late":"Status"}</th></tr></thead><tbody>`+
+      list.map(t=>`<tr><td>${esc(t.description)}</td><td class="owner-name">${esc(t.owner)}</td>
+        <td>${esc(t.due_date||"—")}</td>
+        <td>${showAge?'<span class="days-late">'+daysBetween(t.due_date,asOfDate)+'d</span>':esc(t.status)}</td></tr>`).join("")+
+      `</tbody></table>`;
+  };
+  const threadTable=(list)=>{
+    if(!list.length) return `<div class="empty">Nothing to show for this filter.</div>`;
+    return `<table><thead><tr><th>Thread</th><th>Summary</th><th>Department</th><th>Sentiment</th></tr></thead><tbody>`+
+      list.map(i=>`<tr><td class="owner-name">${esc(i.thread_id)}</td>
+        <td>${esc(i.summary.slice(0,90))}${i.summary.length>90?'…':''}</td>
+        <td>${esc(i.department)} ${i.bottleneck?'<span class="badge bottleneck">bottleneck</span>':''}</td>
+        <td><span class="sentiment ${i.sentiment}">${i.sentiment}</span></td></tr>`).join("")+
+      `</tbody></table>`;
+  };
+  if(kpiFilter==="threads"){ title="All Threads"; inner=threadTable(ins); }
+  else if(kpiFilter==="open"){ title="Open Tasks"; inner=taskTable(open,false); }
+  else if(kpiFilter==="overdue"){ title="Overdue Tasks";
+    inner=taskTable(open.filter(isOverdue).sort((a,b)=>a.due_date<b.due_date?-1:1),true); }
+  else if(kpiFilter==="bottlenecks"){ title="Bottleneck Threads"; inner=threadTable(ins.filter(i=>i.bottleneck)); }
+  else if(kpiFilter==="topics"){
+    title="Active Topics";
+    const counts={}; ins.forEach(i=>i.topic_tags.forEach(t=>counts[t]=(counts[t]||0)+1));
+    const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    inner=entries.length
+      ? `<table><thead><tr><th>Topic</th><th>Threads</th></tr></thead><tbody>`+
+          entries.map(([n,c])=>`<tr><td class="owner-name">${esc(n)}</td><td>${c}</td></tr>`).join("")+`</tbody></table>`
+      : `<div class="empty">No topics for this filter.</div>`;
+  }
+  panel.innerHTML=`<div class="card kpi-detail">
+    <div class="detail-head"><h2>${esc(title)}</h2><span class="clear-link" id="kpiClear">Clear ✕</span></div>
+    ${inner}</div>`;
+  const clr=document.getElementById("kpiClear");
+  if(clr) clr.addEventListener("click",()=>{kpiFilter=null;renderKPIs();renderKpiDetail();});
+}
+
+function renderOwnerChart(){
+  const ctx=document.getElementById("ownerChart");
+  if(typeof Chart==="undefined"){ if(ctx) ctx.parentElement.insertAdjacentHTML("beforeend","<div class='empty'>Chart library unavailable — see table data.</div>"); return; }
+  const tk=filteredTasks().filter(t=>t.status!=="resolved"&&t.owner);
+  const counts={}; tk.forEach(t=>counts[t.owner]=(counts[t.owner]||0)+1);
+  const labels=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]).slice(0,10);
+  if(charts.owner)charts.owner.destroy();
+  if(!labels.length){ctx.getContext("2d").clearRect(0,0,ctx.width,ctx.height);return;}
+  charts.owner=new Chart(ctx,{type:"bar",data:{labels,datasets:[{data:labels.map(l=>counts[l]),
+    backgroundColor:"#14213D",borderRadius:4,maxBarThickness:26}]},
+    options:{indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{ticks:{precision:0},grid:{color:"#EFEAE0"}},y:{grid:{display:false}}}}});
+}
+function renderOverdue(){
+  const tk=filteredTasks().filter(isOverdue).sort((a,b)=>a.due_date<b.due_date?-1:1);
+  const el=document.getElementById("overdueBody");
+  if(!tk.length){el.innerHTML=`<tr><td colspan="4" class="empty">No overdue items for this filter.</td></tr>`;return;}
+  el.innerHTML=tk.map(t=>`<tr><td>${esc(t.description)}</td><td class="owner-name">${esc(t.owner)}</td>
+    <td>${esc(t.due_date)}</td><td class="days-late">${daysBetween(t.due_date,asOfDate)}d</td></tr>`).join("");
+}
+function renderTopics(){
+  const counts={},bottleneck={};
+  filteredInsights().forEach(i=>{i.topic_tags.forEach(t=>{counts[t]=(counts[t]||0)+1;if(i.bottleneck)bottleneck[t]=true;});});
+  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const max=entries.length?entries[0][1]:1;
+  const el=document.getElementById("topicList");
+  if(!entries.length){el.innerHTML=`<div class="empty">No topics for this filter.</div>`;return;}
+  el.innerHTML=entries.map(([n,c])=>`<div class="topic-item"><div>
+    <div class="t-name">${esc(n)} ${bottleneck[n]?'<span class="badge bottleneck">bottleneck</span>':''}</div>
+    <div class="t-meta">${c} thread${c>1?'s':''}</div></div>
+    <div class="topic-bar-bg"><div class="topic-bar-fill" style="width:${Math.round(c/max*100)}%"></div></div></div>`).join("");
+}
+function renderVolume(){
+  const ctx=document.getElementById("volumeChart");
+  const head=document.getElementById("volumeHead");
+  if(typeof Chart==="undefined"){ return; }
+  if(charts.volume)charts.volume.destroy();
+
+  const em=filteredEmails();
+  if(em.length){
+    // real conversation volume: emails per day
+    if(head) head.innerHTML='Conversation Volume Trend<span class="stamp">emails / day</span>';
+    const byDay={}; em.forEach(e=>{byDay[e.day]=(byDay[e.day]||0)+1;});
+    const days=Object.keys(byDay).sort();
+    charts.volume=new Chart(ctx,{type:"line",data:{labels:days,
+      datasets:[{data:days.map(d=>byDay[d]),borderColor:"#1F6F6B",backgroundColor:"rgba(31,111,107,.12)",
+        fill:true,tension:.3,pointRadius:2,pointBackgroundColor:"#1F6F6B"}]},
+      options:{plugins:{legend:{display:false}},scales:{
+        x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:8}},
+        y:{beginAtZero:true,ticks:{precision:0},grid:{color:"#EFEAE0"}}}}});
+  } else {
+    // fallback: sentiment mix
+    if(head) head.innerHTML='Sentiment Mix<span class="stamp">across threads</span>';
+    const ins=filteredInsights();
+    const sent={positive:0,neutral:0,negative:0};
+    ins.forEach(i=>{sent[i.sentiment]=(sent[i.sentiment]||0)+1;});
+    charts.volume=new Chart(ctx,{type:"doughnut",data:{labels:["Positive","Neutral","Negative"],
+      datasets:[{data:[sent.positive,sent.neutral,sent.negative],
+        backgroundColor:["#1F6F6B","#C9C2B0","#C1502E"]}]},
+      options:{plugins:{legend:{position:"bottom",labels:{font:{size:11}}}}}});
+  }
+}
+function renderRepo(){
+  const term=searchTerm.toLowerCase();
+  const rows=filteredInsights().filter(i=>{
+    const hay=[i.summary,i.topic_tags.join(" "),i.decisions.join(" "),i.department].join(" ").toLowerCase();
+    return !term||hay.includes(term);
+  });
+  const el=document.getElementById("krGrid");
+  if(!rows.length){el.innerHTML=`<div class="empty">No matching threads.</div>`;return;}
+  el.innerHTML=rows.map(i=>{
+    const dec=i.decisions.map(d=>`<li>${esc(d)}</li>`).join("");
+    const tags=i.topic_tags.map(t=>`<span class="tag-pill">${esc(t)}</span>`).join("");
+    return `<div class="kr-card"><div class="kr-head"><h3>${esc(i.thread_id)} — ${esc(i.summary.slice(0,60))}${i.summary.length>60?'…':''}</h3>
+      <span class="sentiment ${i.sentiment}">${i.sentiment}</span></div>
+      <div class="kr-dept">${esc(i.department)} ${i.bottleneck?'· <span class="badge bottleneck">bottleneck</span>':''}</div>
+      <p>${esc(i.summary)}</p>${dec?`<ul class="decisions">${dec}</ul>`:""}
+      <div style="margin-top:8px;">${tags}</div></div>`;
+  }).join("");
+}
+
+function buildShell(){
+  document.getElementById("app").innerHTML=`
+  <div class="topbar"><div class="eyebrow">UCIC · Group Email Intelligence</div>
+    <h1>The Inbox Ledger</h1>
+    <div class="sub">Live view of the n8n + Groq pipeline output — tasks, owners, decisions and bottlenecks across every thread.</div>
+    <div class="controls-row">
+      <div><label>As of</label><input type="date" id="asOfInput" class="as-of-box" value="${asOfDate}"></div>
+      <div class="status-pill" id="statusPill">Loading…</div>
+    </div>
+  </div>
+  <div class="chip-row" id="chipRow"></div>
+  <div class="section"><div class="kpi-grid" id="kpiGrid"></div>
+    <div class="kpi-detail" id="kpiDetail"></div></div>
+  <div class="section"><div class="two-col">
+    <div class="card"><div class="section-head"><h2>Tasks by Owner</h2><span class="stamp">open</span></div><canvas id="ownerChart" height="220"></canvas></div>
+    <div class="card"><div class="section-head"><h2>Overdue Tasks</h2><span class="stamp">vs. as-of date</span></div>
+      <table><thead><tr><th>Task</th><th>Owner</th><th>Due</th><th>Days late</th></tr></thead><tbody id="overdueBody"></tbody></table></div>
+  </div></div>
+  <div class="section"><div class="two-col">
+    <div class="card"><div class="section-head"><h2>Active Discussion Topics</h2><span class="stamp">by thread count</span></div><div id="topicList"></div></div>
+    <div class="card"><div class="section-head" id="volumeHead"><h2>Conversation Volume Trend</h2><span class="stamp">emails / day</span></div><canvas id="volumeChart" height="220"></canvas></div>
+  </div></div>
+  <div class="section"><div class="section-head"><h2>Knowledge Repository</h2><span class="stamp">decisions, lessons, bottlenecks</span></div>
+    <input type="text" class="search-box" id="searchBox" placeholder="Search decisions, topics, tags e.g. 'covenant', 'KYC', 'automation'...">
+    <div class="kr-grid" id="krGrid"></div></div>
+  <div class="footnote">Reads Thread_Insights, Tasks and (optionally) Candidate_Input_Emails via published CSV. No AI runs at view time — this visualizes pipeline output. Refresh to pull the latest rows after a new pipeline run.</div>`;
+  document.getElementById("asOfInput").addEventListener("change",e=>{asOfDate=e.target.value;render();});
+  document.getElementById("searchBox").addEventListener("input",e=>{searchTerm=e.target.value;renderRepo();});
+}
+
+if(INSIGHTS_CSV_URL){ buildShell(); loadData(); } else { renderSetup(); }
+</script>
+</body>
+</html>
+
+/Users/kanika/Documents/task2/index.html
